@@ -60,7 +60,7 @@ def handle_chat_prompt(prompt):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
- 
+
     # Send the user's prompt to Azure OpenAI and display the response
     # The call to Azure OpenAI is handled in create_chat_completion()
     # This function loops through the responses and displays them as they come in.
