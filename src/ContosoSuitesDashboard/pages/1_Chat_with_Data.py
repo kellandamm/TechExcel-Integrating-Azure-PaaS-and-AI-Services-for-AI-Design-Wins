@@ -15,41 +15,31 @@ def create_chat_completion(messages):
     aoai_key = st.secrets["aoai"]["key"]
     aoai_deployment_name = st.secrets["aoai"]["deployment_name"]
     
+    
     client = openai.AzureOpenAI(
         api_key=aoai_key,
         api_version="2024-06-01",
         azure_endpoint = aoai_endpoint
     )
     
+    openai.api_key = aoai_key
+    openai.api_base = aoai_endpoint
+    openai.api_type = "azure"
+    openai.api_version = "2023-05-15"
     search_endpoint = st.secrets["search"]["endpoint"]
     search_key = st.secrets["search"]["key"]
     search_index_name = st.secrets["search"]["index_name"]
 
     # Create and return a new chat completion request
     return client.chat.completions.create(
-            model=aoai_deployment_name,
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in messages
-            ],
-            stream=True,
-            extra_body={
-                "data_sources": [
-                    {
-                        "type": "azure_search",
-                        "parameters": {
-                            "endpoint": search_endpoint,
-                            "index_name": search_index_name,
-                            "authentication": {
-                                "type": "api_key",
-                                "key": search_key
-                            }
-                        }
-                    }
-                ]
-            }
-        ) 
-
+        model=aoai_deployment_name,
+        messages=[
+            {"role": m["role"], "content": m["content"]}
+            for m in messages
+        ],
+        stream=True
+    )
+    
 def handle_chat_prompt(prompt):
     """Echo the user's prompt to the chat window.
     Then, send the user's prompt to Azure OpenAI and display the response."""
@@ -79,11 +69,10 @@ def main():
     st.write(
     """
     # Chat with Data
-
+    
     This Streamlit dashboard is intended to show off capabilities of Azure OpenAI, including integration with AI Search.
     """
     )
-
     # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -96,6 +85,5 @@ def main():
     # Await a user message and handle the chat prompt when it comes in.
     if prompt := st.chat_input("Enter a message:"):
         handle_chat_prompt(prompt)
-
 if __name__ == "__main__":
     main()
