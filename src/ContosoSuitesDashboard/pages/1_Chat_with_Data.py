@@ -16,9 +16,9 @@ def create_chat_completion(messages):
     aoai_deployment_name = st.secrets["aoai"]["deployment_name"]
     
     client = openai.AzureOpenAI(
-        api_key="aoai_key",
+        api_key=aoai_key,
         api_version="2024-06-01",
-        azure_endpoint = "aoai_endpoint"
+        azure_endpoint = aoai_endpoint
     )
     
     search_endpoint = st.secrets["search"]["endpoint"]
@@ -27,7 +27,7 @@ def create_chat_completion(messages):
 
     # Create and return a new chat completion request
     return client.chat.completions.create(
-            model="aoai_deployment_name",
+            model=aoai_deployment_name,
             messages=[
                 {"role": m["role"], "content": m["content"]}
                 for m in messages
@@ -38,11 +38,11 @@ def create_chat_completion(messages):
                     {
                         "type": "azure_search",
                         "parameters": {
-                            "endpoint": "search_endpoint",
-                            "index_name": "search_index_name",
+                            "endpoint": search_endpoint,
+                            "index_name": search_index_name,
                             "authentication": {
                                 "type": "api_key",
-                                "key": "search_key"
+                                "key": search_key
                             }
                         }
                     }
@@ -69,7 +69,7 @@ def handle_chat_prompt(prompt):
         for response in create_chat_completion(st.session_state.messages):
             if response.choices:
                 full_response += (response.choices[0].delta.content or "")
-                message_placeholder.markdown(full_response + "")
+                message_placeholder.markdown(full_response)
         message_placeholder.markdown(full_response)
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 

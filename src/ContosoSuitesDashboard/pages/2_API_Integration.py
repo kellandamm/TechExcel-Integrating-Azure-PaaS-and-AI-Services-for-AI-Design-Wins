@@ -40,11 +40,25 @@ def main():
     )
 
     # Display the list of hotels as a drop-down list
-    hotels_json = get_hotels().json()
+    try:
+        hotels_json = get_hotels().json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching hotels: {e}")
+        hotels_json = []
     # Reshape hotels to an object with hotelID and hotelName
     hotels = [{"id": hotel["hotelID"], "name": hotel["hotelName"]} for hotel in hotels_json]
     
-    selected_hotel = st.selectbox("Hotel:", hotels, format_func=lambda x: x["name"])
+    def format_hotel_name(hotel):
+        return hotel["name"]
+    
+    selected_hotel = st.selectbox("Select a hotel", hotels, format_func=format_hotel_name)
+    
+    if selected_hotel:
+        try:
+            bookings = get_hotel_bookings(selected_hotel["id"]).json()
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error fetching bookings: {e}")
+            bookings = []
 
     # Display the list of bookings for the selected hotel as a table
     if selected_hotel:
@@ -54,23 +68,24 @@ def main():
         st.table(bookings)
 
     st.write(
-        """
-        ## Ask a Bookings Question
-
+    """    
         Enter a question about hotel bookings in the text box below.
         Then select the "Submit" button to call the Chat endpoint.
-        """
+    """
     )
-
-    question = st.text_input("Question:", key="question")
+    question = st.text_input("Question:", key="booking_question")
     if st.button("Submit"):
         with st.spinner("Calling Chat endpoint..."):
-            if question:
-                response = invoke_chat_endpoint(question)
-                st.write(response.text)
-                st.success("Chat endpoint called successfully.")
-            else:
-                st.warning("Please enter a question.")
+                try:
+                    response = invoke_chat_endpoint(question)
+                    response.raise_for_status()
+                    st.write(response.text)
+                    st.success("Chat endpoint called successfully.")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Error calling Chat endpoint: {e}")
+                    st.success("Your question has been submitted successfully! The chat endpoint responded with the following message:")
+                else:
+                    st.warning("Please enter a question about hotel bookings to proceed.")
 
 if __name__ == "__main__":
     main()
